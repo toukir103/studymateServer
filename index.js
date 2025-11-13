@@ -1,14 +1,21 @@
-const express = require("express");
-const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
-const dotenv = require("dotenv");
-const cors = require("cors");
+import express from "express";
+import { MongoClient, ServerApiVersion, ObjectId } from "mongodb";
+import dotenv from "dotenv";
+import cors from "cors";
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors());
+// ✅ CORS Config
+app.use(
+  cors({
+    origin: process.env.CLIENT_URL || "*", // Client deployed URL দিন
+    credentials: true,
+  })
+);
+
 app.use(express.json());
 
 // MongoDB connection
@@ -26,27 +33,25 @@ let usersCollection;
 let testimonialsCollection;
 let partnersCollection;
 let requestsCollection;
+
 async function connectDB() {
   try {
     await client.connect();
-    console.log(" Connected to MongoDB");
+    console.log("✅ Connected to MongoDB");
 
-    // 🔹 Students Collection
+    // Collections
     const studentsDB = client.db("StudentsCollection");
     usersCollection = studentsDB.collection("users");
-    console.log(" Users collection ready");
+    console.log("Users collection ready");
 
-    // 🔹 Testimonials Collection
     const testimonialsDB = client.db("Testimonials");
     testimonialsCollection = testimonialsDB.collection("testimonials");
-    console.log(" Testimonials collection ready");
+    console.log("Testimonials collection ready");
 
-    // 🔹 Partner Requests Collection
     const partnerRequestsDB = client.db("partnerRequests");
     requestsCollection = partnerRequestsDB.collection("requests");
-    console.log(" Requests collection ready");
+    console.log("Requests collection ready");
 
-    // 🔹 Study Partners Collection
     const studyPartnersDB = client.db("StudyPartnersCollection");
     partnersCollection = studyPartnersDB.collection("partners");
     console.log("Partners collection ready");
@@ -57,9 +62,9 @@ async function connectDB() {
   }
 }
 
-
-
+// --------------------
 // Users Routes
+// --------------------
 app.get("/users", async (req, res) => {
   try {
     const users = await usersCollection.find().toArray();
@@ -89,22 +94,22 @@ app.delete("/users/:id", async (req, res) => {
   }
 });
 
-//  Partners Routes
-
-//  Create Partner Profile
+// --------------------
+// Partners Routes
+// --------------------
 app.post("/partners", async (req, res) => {
   try {
     const newPartner = { ...req.body, partnerCount: 0 };
     const result = await partnersCollection.insertOne(newPartner);
-    res
-      .status(201)
-      .json({ message: "Profile created successfully!", partnerId: result.insertedId });
+    res.status(201).json({
+      message: "Profile created successfully!",
+      partnerId: result.insertedId,
+    });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
 });
 
-//  Get all partners with optional search & sort
 app.get("/partners", async (req, res) => {
   try {
     const { search, sort } = req.query;
@@ -136,7 +141,6 @@ app.get("/partners", async (req, res) => {
   }
 });
 
-//  Get Partner Details by ID
 app.get("/partners/:id", async (req, res) => {
   try {
     const id = req.params.id;
@@ -148,7 +152,6 @@ app.get("/partners/:id", async (req, res) => {
   }
 });
 
-//  Send Partner Request (increment partnerCount + save request)
 app.post("/partners/:id/request", async (req, res) => {
   try {
     const id = req.params.id;
@@ -178,8 +181,9 @@ app.post("/partners/:id/request", async (req, res) => {
   }
 });
 
-
-// GET /my-connections/:email
+// --------------------
+// Connections / Requests Routes
+// --------------------
 app.get("/my-connections/:email", async (req, res) => {
   try {
     const email = req.params.email;
@@ -206,6 +210,7 @@ app.put("/connections/:id", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
 app.delete("/connections/:id", async (req, res) => {
   try {
     const id = req.params.id;
@@ -216,9 +221,9 @@ app.delete("/connections/:id", async (req, res) => {
   }
 });
 
-
-
-
+// --------------------
+// Testimonials
+// --------------------
 app.get("/testimonials", async (req, res) => {
   try {
     const testimonials = await testimonialsCollection.find().toArray();
@@ -228,13 +233,16 @@ app.get("/testimonials", async (req, res) => {
   }
 });
 
-
+// --------------------
 // Default route
+// --------------------
 app.get("/", (req, res) => {
-  res.send(" StudyMate Server is running successfully!");
+  res.send("✅ StudyMate Server is running successfully!");
 });
 
+// --------------------
 // Start server
+// --------------------
 connectDB().then(() => {
-  app.listen(PORT, () => console.log(` Server running on port ${PORT}`));
+  app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
 });
